@@ -1,4 +1,4 @@
-# 🛍️ Drape Studio — Full-Stack E-Commerce Platform
+# 🛍️ Drape Studio | Full-Stack E-Commerce Platform
 
 > A production-grade e-commerce platform built from scratch, documented publicly — every commit, every bug, every decision.
 
