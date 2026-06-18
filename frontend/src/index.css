@@ -1,0 +1,83 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Outfit:wght@200;300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+
+@theme {
+  --color-ivory:    #F7F5F2;
+  --color-chalk:    #EEEAE3;
+  --color-stone:    #D6D0C4;
+  --color-slate:    #8C8880;
+  --color-espresso: #2E2B26;
+  --color-void:     #0D0D0D;
+  --color-gold:     #C9A96E;
+  --color-gold-dark:#B8924A;
+  --color-crimson:  #E8315A;
+
+  --font-display: "Playfair Display", Georgia, serif;
+  --font-body:    "Outfit", system-ui, sans-serif;
+  --font-mono:    "JetBrains Mono", monospace;
+
+  --radius-btn:   2px;
+  --radius-card:  8px;
+  --radius-input: 4px;
+  --radius-pill:  100px;
+
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-hover: 0 8px 24px rgba(0,0,0,0.10);
+  --shadow-modal: 0 20px 60px rgba(0,0,0,0.15);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-ivory);
+  color: var(--color-espresso);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5 {
+  font-family: var(--font-display);
+  color: var(--color-void);
+  line-height: 1.2;
+}
+
+a { color: inherit; text-decoration: none; }
+
+img { max-width: 100%; display: block; }
+
+button { cursor: pointer; font-family: var(--font-body); }
+
+input, textarea, select {
+  font-family: var(--font-body);
+  outline: none;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--color-chalk); }
+::-webkit-scrollbar-thumb { background: var(--color-stone); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-slate); }
+
+/* Selection */
+::selection { background: var(--color-gold); color: white; }
+
+
+
+/* Navbar */
+.dropdown-item {
+  display: block;
+  padding: 8px 16px;
+  font-size: 0.875rem;
+  color: var(--color-espresso);
+  transition: background-color 0.15s ease;
+  font-family: var(--font-body);
+  font-weight: 400;
+}
+
+.dropdown-item:hover {
+  background-color: var(--color-chalk);
+}

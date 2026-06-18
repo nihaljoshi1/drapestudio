@@ -1,0 +1,235 @@
+/* ═══════════════════════════════════════
+   CartItem.css — Drape Studio
+   BEM prefix: ci__
+═══════════════════════════════════════ */
+
+.ci {
+  display: flex;
+  gap: 14px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--color-chalk);
+  animation: ci-in 0.25s ease both;
+}
+
+.ci:last-child {
+  border-bottom: none;
+}
+
+@keyframes ci-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Thumbnail ── */
+.ci__img {
+  position: relative;
+  width: 76px;
+  height: 96px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--color-chalk);
+  flex-shrink: 0;
+}
+
+.ci__img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.ci__img-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-stone);
+}
+
+/* Sale indicator dot */
+.ci__sale-dot {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-crimson);
+}
+
+/* ── Body ── */
+.ci__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+/* ── Top row: name + remove ── */
+.ci__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ci__meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.ci__name {
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-void);
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ci__attrs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 5px;
+  flex-wrap: wrap;
+}
+
+.ci__attr {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: var(--color-slate);
+  letter-spacing: 0.02em;
+}
+
+.ci__attr--size {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: var(--color-chalk);
+  padding: 2px 6px;
+  border-radius: 2px;
+  color: var(--color-espresso);
+}
+
+.ci__colour-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.1);
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+/* Remove button */
+.ci__remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-stone);
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+  transition: color 0.15s ease, background 0.15s ease;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.ci__remove:hover {
+  color: var(--color-crimson);
+  background: rgba(232, 49, 90, 0.07);
+}
+
+/* ── Bottom row: qty + price ── */
+.ci__bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Quantity stepper */
+.ci__qty {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border: 1px solid var(--color-stone);
+  border-radius: 2px;
+  overflow: hidden;
+  height: 30px;
+}
+
+.ci__qty-btn {
+  width: 28px;
+  height: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 300;
+  color: var(--color-espresso);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease;
+  line-height: 1;
+}
+
+.ci__qty-btn:hover:not(:disabled) {
+  background: var(--color-chalk);
+}
+
+.ci__qty-btn:disabled {
+  color: var(--color-stone);
+  cursor: not-allowed;
+}
+
+.ci__qty-val {
+  width: 28px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-void);
+  border-left: 1px solid var(--color-stone);
+  border-right: 1px solid var(--color-stone);
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Price */
+.ci__price-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.ci__price-original {
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  color: var(--color-stone);
+  text-decoration: line-through;
+}
+
+.ci__price {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--color-void);
+  letter-spacing: -0.01em;
+}

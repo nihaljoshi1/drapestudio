@@ -1,0 +1,137 @@
+/* ═══════════════════════════════════════════
+   ProductGrid.css — Drape Studio
+   BEM prefix: pg__
+═══════════════════════════════════════════ */
+
+/* ── Grid ── */
+.pg__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+/* ── Skeleton card ── */
+.pg__skeleton {
+  background: #fff;
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+
+.pg__skeleton-img {
+  aspect-ratio: 3 / 4;
+  background: linear-gradient(
+    90deg,
+    var(--color-chalk) 25%,
+    var(--color-stone) 50%,
+    var(--color-chalk) 75%
+  );
+  background-size: 200% 100%;
+  animation: pg-shimmer 1.4s ease infinite;
+}
+
+.pg__skeleton-body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pg__skeleton-line {
+  height: 12px;
+  border-radius: 2px;
+  background: linear-gradient(
+    90deg,
+    var(--color-chalk) 25%,
+    var(--color-stone) 50%,
+    var(--color-chalk) 75%
+  );
+  background-size: 200% 100%;
+  animation: pg-shimmer 1.4s ease infinite;
+  width: 100%;
+}
+
+.pg__skeleton-line--short { width: 45%; }
+.pg__skeleton-line--price { width: 35%; margin-top: 4px; }
+
+/* Stagger shimmer for skeleton cards */
+.pg__skeleton:nth-child(2) .pg__skeleton-img,
+.pg__skeleton:nth-child(2) .pg__skeleton-line { animation-delay: 0.1s; }
+.pg__skeleton:nth-child(3) .pg__skeleton-img,
+.pg__skeleton:nth-child(3) .pg__skeleton-line { animation-delay: 0.2s; }
+.pg__skeleton:nth-child(4) .pg__skeleton-img,
+.pg__skeleton:nth-child(4) .pg__skeleton-line { animation-delay: 0.15s; }
+.pg__skeleton:nth-child(5) .pg__skeleton-img,
+.pg__skeleton:nth-child(5) .pg__skeleton-line { animation-delay: 0.25s; }
+.pg__skeleton:nth-child(6) .pg__skeleton-img,
+.pg__skeleton:nth-child(6) .pg__skeleton-line { animation-delay: 0.05s; }
+
+@keyframes pg-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Error state ── */
+.pg__error {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 80px 24px;
+}
+
+.pg__error-title {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  color: var(--color-void);
+  margin-bottom: 8px;
+}
+
+.pg__error-sub {
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  color: var(--color-slate);
+}
+
+/* ── Empty state ── */
+.pg__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 80px 24px;
+  gap: 12px;
+}
+
+.pg__empty-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--color-chalk);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-stone);
+  margin-bottom: 4px;
+}
+
+.pg__empty-title {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 500;
+  color: var(--color-void);
+}
+
+.pg__empty-sub {
+  font-family: var(--font-body);
+  font-size: 0.825rem;
+  color: var(--color-slate);
+  font-weight: 300;
+}
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+  .pg__grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+}
+
+@media (max-width: 480px) {
+  .pg__grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+}
