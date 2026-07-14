@@ -7,6 +7,8 @@ export const ENV = {
   SUPABASE_SERVICE_KEY: process.env.SUPABASE_SERVICE_KEY,
   FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173',
   NODE_ENV: process.env.NODE_ENV || 'development',
+  SMTP_USER: process.env.SMTP_USER,
+  SMTP_PASS: process.env.SMTP_PASS,
 }
 
 // Fail fast — if critical env vars are missing, crash immediately

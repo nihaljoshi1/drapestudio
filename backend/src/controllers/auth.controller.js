@@ -1,66 +1,11 @@
 import { supabase } from '../config/supabase.js'
 import { sendSuccess, sendError } from '../utils/apiResponse.js'
+import { randomInt } from 'crypto'
+import { sendOtpEmail } from '../services/emailService.js'
 
-// ─── Register ─────────────────────────────────────────────
-export const register = async (req, res) => {
-  try {
-    const { name, email, password, phone } = req.body
-
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { name, phone }
-      }
-    })
-
-    if (error) return sendError(res, error.message, 400)
-
-    return sendSuccess(res, 'Registration successful. Please verify your email.', {
-      user: {
-        id: data.user.id,
-        email: data.user.email,
-        name,
-      }
-    }, 201)
-  } catch (err) {
-    return sendError(res, 'Registration failed', 500)
-  }
-}
-
-// ─── Login ────────────────────────────────────────────────
-export const login = async (req, res) => {
-  try {
-    const { email, password } = req.body
-
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-
-    if (error) return sendError(res, 'Invalid email or password', 401)
-
-    // Fetch profile for role
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', data.user.id)
-      .single()
-
-    return sendSuccess(res, 'Login successful', {
-      token: data.session.access_token,
-      user: {
-        id: data.user.id,
-        email: data.user.email,
-        name: profile?.name,
-        phone: profile?.phone,
-        role: profile?.role,
-      }
-    })
-  } catch (err) {
-    return sendError(res, 'Login failed', 500)
-  }
-}
+const OTP_EXPIRY_MINUTES = 10
+const MAX_ATTEMPTS = 5
+const RESEND_COOLDOWN_SECONDS = 30
 
 // ─── Logout ───────────────────────────────────────────────
 export const logout = async (req, res) => {
@@ -106,6 +51,195 @@ export const resetPassword = async (req, res) => {
     return sendSuccess(res, 'Password reset successful')
   } catch (err) {
     return sendError(res, 'Password reset failed', 500)
+  }
+}
+
+function generateCode() {
+  return String(randomInt(0, 1000000)).padStart(6, '0')
+}
+
+async function createOtp(email, purpose, payload) {
+  const { data: existing } = await supabase
+    .from('otp_codes')
+    .select('*')
+    .eq('email', email)
+    .eq('purpose', purpose)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single()
+
+  if (existing) {
+    const secondsSince = (Date.now() - new Date(existing.created_at).getTime()) / 1000
+    if (secondsSince < RESEND_COOLDOWN_SECONDS) {
+      throw new Error(`Please wait ${Math.ceil(RESEND_COOLDOWN_SECONDS - secondsSince)}s before requesting another code`)
+    }
+    await supabase.from('otp_codes').delete().eq('id', existing.id)
+  }
+
+  const code = generateCode()
+  const expires_at = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000).toISOString()
+
+  const { error } = await supabase.from('otp_codes').insert({ email, code, purpose, payload, expires_at })
+  if (error) throw new Error(error.message)
+
+  await sendOtpEmail(email, code, purpose)
+}
+
+async function verifyOtpCode(email, purpose, code) {
+  const { data: row, error } = await supabase
+    .from('otp_codes')
+    .select('*')
+    .eq('email', email)
+    .eq('purpose', purpose)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single()
+
+  if (error || !row) return { valid: false, reason: 'No pending code found. Please request a new one.' }
+
+  if (new Date(row.expires_at) < new Date()) {
+    await supabase.from('otp_codes').delete().eq('id', row.id)
+    return { valid: false, reason: 'Code expired. Please request a new one.' }
+  }
+
+  if (row.attempts >= MAX_ATTEMPTS) {
+    await supabase.from('otp_codes').delete().eq('id', row.id)
+    return { valid: false, reason: 'Too many incorrect attempts. Please request a new code.' }
+  }
+
+  if (row.code !== code) {
+    await supabase.from('otp_codes').update({ attempts: row.attempts + 1 }).eq('id', row.id)
+    return { valid: false, reason: `Incorrect code. ${MAX_ATTEMPTS - row.attempts - 1} attempts remaining.` }
+  }
+
+  return { valid: true, row }
+}
+
+// ─── Register: request OTP ────────────────────────────────
+export const requestRegisterOtp = async (req, res) => {
+  try {
+    const { name, email, password, phone, address } = req.body
+
+    if (!name || !email || !password) return sendError(res, 'Name, email and password are required', 400)
+    if (!address?.line1 || !address?.city || !address?.state || !address?.pincode) {
+      return sendError(res, 'Complete address is required', 400)
+    }
+
+    await createOtp(email, 'register', { name, email, password, phone, address })
+
+    return sendSuccess(res, 'OTP sent to your email')
+  } catch (err) {
+    return sendError(res, err.message || 'Failed to send OTP', 400)
+  }
+}
+
+// ─── Register: verify OTP, actually create the account ────
+export const verifyRegisterOtp = async (req, res) => {
+  try {
+    const { email, code } = req.body
+    const result = await verifyOtpCode(email, 'register', code)
+    if (!result.valid) return sendError(res, result.reason, 400)
+
+    const { name, password, phone, address } = result.row.payload
+
+    const { data, error } = await supabase.auth.signUp({
+      email, password,
+      options: { data: { name, phone } },
+    })
+
+    if (error) {
+      await supabase.from('otp_codes').delete().eq('id', result.row.id)
+      return sendError(res, error.message, 400)
+    }
+
+    await supabase.from('addresses').insert({
+      user_id: data.user.id,
+      label: address.label || 'Home',
+      line1: address.line1,
+      line2: address.line2 || null,
+      city: address.city,
+      state: address.state,
+      pincode: address.pincode,
+      is_default: true,
+    })
+
+    await supabase.from('otp_codes').delete().eq('id', result.row.id)
+
+    return sendSuccess(res, 'Registration successful', {
+      user: { id: data.user.id, email: data.user.email, name },
+    }, 201)
+  } catch (err) {
+    return sendError(res, 'Verification failed', 500)
+  }
+}
+
+// ─── Login: request OTP (password checked here) ───────────
+export const requestLoginOtp = async (req, res) => {
+  try {
+    const { email, password } = req.body
+
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) return sendError(res, 'Invalid email or password', 401)
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', data.user.id)
+      .single()
+
+    const sessionPayload = {
+      token: data.session.access_token,
+      user: {
+        id: data.user.id,
+        email: data.user.email,
+        name: profile?.name,
+        phone: profile?.phone,
+        role: profile?.role,
+      },
+    }
+
+    await createOtp(email, 'login', sessionPayload)
+
+    return sendSuccess(res, 'OTP sent to your email')
+  } catch (err) {
+    return sendError(res, err.message || 'Failed to send OTP', 400)
+  }
+}
+
+// ─── Login: verify OTP, release the session ────────────────
+export const verifyLoginOtp = async (req, res) => {
+  try {
+    const { email, code } = req.body
+    const result = await verifyOtpCode(email, 'login', code)
+    if (!result.valid) return sendError(res, result.reason, 400)
+
+    await supabase.from('otp_codes').delete().eq('id', result.row.id)
+
+    return sendSuccess(res, 'Login successful', result.row.payload)
+  } catch (err) {
+    return sendError(res, 'Verification failed', 500)
+  }
+}
+
+// ─── Resend (either purpose) ────────────────────────────────
+export const resendOtp = async (req, res) => {
+  try {
+    const { email, purpose } = req.body
+    const { data: row } = await supabase
+      .from('otp_codes')
+      .select('*')
+      .eq('email', email)
+      .eq('purpose', purpose)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (!row) return sendError(res, 'No pending request found. Please start again.', 400)
+
+    await createOtp(email, purpose, row.payload)
+    return sendSuccess(res, 'OTP resent')
+  } catch (err) {
+    return sendError(res, err.message || 'Failed to resend OTP', 400)
   }
 }
 

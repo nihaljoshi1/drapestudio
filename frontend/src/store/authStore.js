@@ -10,10 +10,46 @@ export const useAuthStore = create(
       isAuthenticated: false,
       isLoading: false,
 
-      login: async (email, password) => {
+      requestRegisterOtp: async (payload) => {
         set({ isLoading: true })
         try {
-          const res = await authService.login({ email, password })
+          await authService.requestRegisterOtp(payload)
+          set({ isLoading: false })
+          return { success: true }
+        } catch (err) {
+          set({ isLoading: false })
+          return { success: false, message: err.message }
+        }
+      },
+
+      verifyRegisterOtp: async (email, code) => {
+        set({ isLoading: true })
+        try {
+          const res = await authService.verifyRegisterOtp({ email, code })
+          set({ isLoading: false })
+          return { success: true, user: res.data?.user }
+        } catch (err) {
+          set({ isLoading: false })
+          return { success: false, message: err.message }
+        }
+      },
+
+      requestLoginOtp: async (email, password) => {
+        set({ isLoading: true })
+        try {
+          await authService.requestLoginOtp({ email, password })
+          set({ isLoading: false })
+          return { success: true }
+        } catch (err) {
+          set({ isLoading: false })
+          return { success: false, message: err.message }
+        }
+      },
+
+      verifyLoginOtp: async (email, code) => {
+        set({ isLoading: true })
+        try {
+          const res = await authService.verifyLoginOtp({ email, code })
           const { token, user } = res.data
           localStorage.setItem('token', token)
           set({ user, token, isAuthenticated: true, isLoading: false })
@@ -24,20 +60,21 @@ export const useAuthStore = create(
         }
       },
 
-      register: async (name, email, password) => {
-        set({ isLoading: true })
+      resendOtp: async (email, purpose) => {
         try {
-          await authService.register({ name, email, password })
-          set({ isLoading: false })
+          await authService.resendOtp({ email, purpose })
           return { success: true }
         } catch (err) {
-          set({ isLoading: false })
           return { success: false, message: err.message }
         }
       },
 
       logout: async () => {
-        await authService.logout()
+        try {
+          await authService.logout()
+        } catch {
+          // server-side logout failure shouldn't block client cleanup
+        }
         localStorage.removeItem('token')
         set({ user: null, token: null, isAuthenticated: false })
       },

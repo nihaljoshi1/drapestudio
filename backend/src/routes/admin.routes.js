@@ -3,6 +3,7 @@ import { body } from 'express-validator'
 import { validate } from '../middleware/validate.js'
 import { authenticate } from '../middleware/authMiddleware.js'
 import { requireAdmin } from '../middleware/adminMiddleware.js'
+import multer from 'multer'
 import {
   getOverview,
   getRevenueChart,
@@ -10,6 +11,13 @@ import {
   adminCreateProduct,
   adminUpdateProduct,
   adminDeleteProduct,
+  adminGetVariants,
+  adminCreateVariant,
+  adminUpdateVariant,
+  adminDeleteVariant,
+  adminUploadImage,
+  adminSetPrimaryImage,
+  adminDeleteImage,
   adminGetOrders,
   adminUpdateOrderStatus,
   adminGetInventory,
@@ -19,10 +27,13 @@ import {
   adminUpdateCoupon,
   adminDeleteCoupon,
   adminGetCustomers,
+  adminGetCategories,
   adminCreateCategory,
   adminUpdateCategory,
   adminDeleteCategory,
 } from '../controllers/admin.controller.js'
+
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } })
 
 const router = Router()
 
@@ -47,6 +58,24 @@ router.post('/products',
 router.patch('/products/:id', adminUpdateProduct)
 router.delete('/products/:id', adminDeleteProduct)
 
+// Variants
+router.get('/products/:productId/variants', adminGetVariants)
+router.post('/products/:productId/variants',
+  [
+    body('size').notEmpty().withMessage('Size is required'),
+    body('colour').notEmpty().withMessage('Colour is required'),
+  ],
+  validate,
+  adminCreateVariant
+)
+router.patch('/variants/:id', adminUpdateVariant)
+router.delete('/variants/:id', adminDeleteVariant)
+
+// Images
+router.post('/products/:productId/images', upload.single('image'), adminUploadImage)
+router.patch('/images/:id/primary', adminSetPrimaryImage)
+router.delete('/images/:id', adminDeleteImage)
+
 // Orders
 router.get('/orders', adminGetOrders)
 router.patch('/orders/:id/status',
@@ -54,6 +83,8 @@ router.patch('/orders/:id/status',
   validate,
   adminUpdateOrderStatus
 )
+
+
 
 // Inventory
 router.get('/inventory', adminGetInventory)
@@ -81,6 +112,7 @@ router.delete('/coupons/:id', adminDeleteCoupon)
 router.get('/customers', adminGetCustomers)
 
 // Categories
+router.get('/categories', adminGetCategories)
 router.post('/categories',
   [body('name').notEmpty().withMessage('Name is required')],
   validate,

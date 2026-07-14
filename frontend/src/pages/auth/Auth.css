@@ -708,3 +708,197 @@
 .auth__page--register .auth__form-container {
   max-width: 420px;
 }
+
+/* ══════════════════════════════════════════
+   STEPPER (Register — Details / Address)
+══════════════════════════════════════════ */
+
+.auth__stepper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: -8px;
+}
+
+.auth__step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0.4;
+  transition: opacity 0.2s ease;
+}
+
+.auth__step--active,
+.auth__step--done {
+  opacity: 1;
+}
+
+.auth__step-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid var(--color-stone);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--color-slate);
+  flex-shrink: 0;
+  transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.auth__step--active .auth__step-dot {
+  border-color: var(--color-gold);
+  color: var(--color-gold);
+}
+
+.auth__step--done .auth__step-dot {
+  background: var(--color-gold);
+  border-color: var(--color-gold);
+  color: var(--color-void);
+}
+
+.auth__step-label {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-slate);
+}
+
+.auth__step--active .auth__step-label {
+  color: var(--color-void);
+}
+
+/* Connecting line between steps */
+.auth__step:not(:last-child)::after {
+  content: '';
+  width: 24px;
+  height: 1px;
+  background: var(--color-stone);
+  margin-left: 4px;
+}
+
+/* ══════════════════════════════════════════
+   ADDRESS STEP — row layout, select field
+══════════════════════════════════════════ */
+
+.auth__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.auth__select {
+  appearance: none;
+  cursor: pointer;
+  background-color: transparent;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238C8880' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 36px;
+}
+
+.auth__select:invalid {
+  color: var(--color-slate);
+}
+
+.auth__step-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.auth__step-actions .btn--secondary {
+  flex-shrink: 0;
+}
+
+.auth__step-actions .btn--primary {
+  flex: 1;
+}
+
+/* ══════════════════════════════════════════
+   OTP STEP
+══════════════════════════════════════════ */
+
+.auth__otp-note {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--color-slate);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.auth__otp-note strong {
+  color: var(--color-espresso);
+  font-weight: 500;
+}
+
+.auth__otp-boxes {
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.auth__otp-box {
+  width: 100%;
+  aspect-ratio: 1;
+  max-width: 52px;
+  border: 1.5px solid var(--color-stone);
+  border-radius: var(--radius-input);
+  background: white;
+  font-family: var(--font-mono);
+  font-size: 1.4rem;
+  font-weight: 600;
+  text-align: center;
+  color: var(--color-void);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.auth__otp-box:focus {
+  outline: none;
+  border-color: var(--color-gold);
+  background: var(--color-ivory);
+}
+
+.auth__otp-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: -4px;
+}
+
+.auth__otp-actions button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: var(--color-slate);
+  font-weight: 400;
+  padding: 0;
+  transition: color 0.15s ease;
+}
+
+.auth__otp-actions button:first-child {
+  color: var(--color-espresso);
+}
+
+.auth__otp-actions button:hover:not(:disabled) {
+  color: var(--color-gold);
+}
+
+.auth__otp-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Mobile: tighten OTP boxes so 6 fit without overflow */
+@media (max-width: 480px) {
+  .auth__otp-box {
+    max-width: 44px;
+    font-size: 1.2rem;
+  }
+}

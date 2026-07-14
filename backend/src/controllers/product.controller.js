@@ -33,9 +33,32 @@ export const getProducts = async (req, res) => {
     if (category) query = query.eq('category_id', category)
     if (min_price) query = query.gte('base_price', min_price)
     if (max_price) query = query.lte('base_price', max_price)
-    if (available === 'true') query = query.gt('product_variants.stock', 0)
 
-    // Sorting
+    // ── Variant-based filters (must use subquery — can't filter on joined tables) ──
+    if (available === 'true') {
+      const { data: inStockVariants } = await supabase
+        .from('product_variants')
+        .select('product_id')
+        .gt('stock', 0)
+
+      const inStockIds = [...new Set(inStockVariants?.map(v => v.product_id) || [])]
+      if (inStockIds.length > 0) query = query.in('id', inStockIds)
+    }
+
+    if (size || colour) {
+      let variantQuery = supabase.from('product_variants').select('product_id')
+      if (size) variantQuery = variantQuery.eq('size', size)
+      if (colour) variantQuery = variantQuery.ilike('colour', colour)
+
+      const { data: matchingVariants } = await variantQuery
+      const matchingIds = [...new Set(matchingVariants?.map(v => v.product_id) || [])]
+      query = query.in('id', matchingIds.length > 0
+        ? matchingIds
+        : ['00000000-0000-0000-0000-000000000000']
+      )
+    }
+
+    // ── Sort ──────────────────────────────────────────────
     const sortMap = {
       newest: { col: 'created_at', asc: false },
       price_asc: { col: 'base_price', asc: true },

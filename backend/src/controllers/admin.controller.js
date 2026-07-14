@@ -52,9 +52,9 @@ export const getOverview = async (req, res) => {
     const { data: lowStock } = await supabase
       .from('product_variants')
       .select(`
-        id, size, colour, stock, sku,
-        products(id, name, slug)
-      `)
+    id, size, colour, colour_hex, stock, sku,
+    products(id, name, slug)
+  `)
       .lte('stock', 5)
       .order('stock', { ascending: true })
 
@@ -259,6 +259,210 @@ export const adminDeleteProduct = async (req, res) => {
     return sendSuccess(res, 'Product archived')
   } catch (err) {
     return sendError(res, 'Failed to delete product', 500)
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// VARIANT MANAGEMENT
+// ═══════════════════════════════════════════════════════════
+
+export const adminGetVariants = async (req, res) => {
+  try {
+    const { productId } = req.params
+
+    const { data, error } = await supabase
+      .from('product_variants')
+      .select('*')
+      .eq('product_id', productId)
+      .order('size', { ascending: true })
+
+    if (error) return sendError(res, error.message, 400)
+
+    return sendSuccess(res, 'Variants fetched', { variants: data })
+  } catch (err) {
+    return sendError(res, 'Failed to fetch variants', 500)
+  }
+}
+
+export const adminCreateVariant = async (req, res) => {
+  try {
+    const { productId } = req.params
+    const { size, colour, colour_hex, stock, sku } = req.body
+
+    if (!size || !colour) return sendError(res, 'Size and colour are required', 400)
+
+    const { data: product } = await supabase
+      .from('products')
+      .select('slug')
+      .eq('id', productId)
+      .single()
+
+    if (!product) return sendError(res, 'Product not found', 404)
+
+    const generatedSku = sku || `${product.slug}-${size}-${colour}`.toUpperCase()
+
+    const { data, error } = await supabase
+      .from('product_variants')
+      .insert({
+        product_id: productId,
+        size, colour,
+        colour_hex: colour_hex || null,
+        stock: stock || 0,
+        sku: generatedSku,
+      })
+      .select()
+      .single()
+
+    if (error) return sendError(res, error.message, 400)
+
+    return sendSuccess(res, 'Variant created', { variant: data }, 201)
+  } catch (err) {
+    return sendError(res, 'Failed to create variant', 500)
+  }
+}
+
+export const adminUpdateVariant = async (req, res) => {
+  try {
+    const { id } = req.params
+    const updates = req.body
+
+    const { data, error } = await supabase
+      .from('product_variants')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) return sendError(res, error.message, 400)
+
+    return sendSuccess(res, 'Variant updated', { variant: data })
+  } catch (err) {
+    return sendError(res, 'Failed to update variant', 500)
+  }
+}
+
+export const adminDeleteVariant = async (req, res) => {
+  try {
+    const { id } = req.params
+
+    const { error } = await supabase
+      .from('product_variants')
+      .delete()
+      .eq('id', id)
+
+    if (error) return sendError(res, error.message, 400)
+
+    return sendSuccess(res, 'Variant deleted')
+  } catch (err) {
+    return sendError(res, 'Failed to delete variant', 500)
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// IMAGE MANAGEMENT
+// ═══════════════════════════════════════════════════════════
+
+export const adminUploadImage = async (req, res) => {
+  try {
+    const { productId } = req.params
+
+    if (!req.file) return sendError(res, 'No image file provided', 400)
+
+    const ext = req.file.originalname.split('.').pop()
+    const fileName = `${productId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('product-images')
+      .upload(fileName, req.file.buffer, {
+        contentType: req.file.mimetype,
+        upsert: false,
+      })
+
+    if (uploadError) return sendError(res, uploadError.message, 400)
+
+    const { data: urlData } = supabase.storage
+      .from('product-images')
+      .getPublicUrl(fileName)
+
+    // If this is the first image for the product, mark it primary
+    const { count: existingCount } = await supabase
+      .from('product_images')
+      .select('*', { count: 'exact', head: true })
+      .eq('product_id', productId)
+
+    const { data, error } = await supabase
+      .from('product_images')
+      .insert({
+        product_id: productId,
+        url: urlData.publicUrl,
+        storage_path: fileName,
+        is_primary: (existingCount || 0) === 0,
+        display_order: existingCount || 0,
+      })
+      .select()
+      .single()
+
+    if (error) return sendError(res, error.message, 400)
+
+    return sendSuccess(res, 'Image uploaded', { image: data }, 201)
+  } catch (err) {
+    return sendError(res, 'Failed to upload image', 500)
+  }
+}
+
+export const adminSetPrimaryImage = async (req, res) => {
+  try {
+    const { id } = req.params
+    const { productId } = req.body
+
+    if (!productId) return sendError(res, 'productId is required', 400)
+
+    await supabase
+      .from('product_images')
+      .update({ is_primary: false })
+      .eq('product_id', productId)
+
+    const { data, error } = await supabase
+      .from('product_images')
+      .update({ is_primary: true })
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) return sendError(res, error.message, 400)
+
+    return sendSuccess(res, 'Primary image set', { image: data })
+  } catch (err) {
+    return sendError(res, 'Failed to set primary image', 500)
+  }
+}
+
+export const adminDeleteImage = async (req, res) => {
+  try {
+    const { id } = req.params
+
+    const { data: image } = await supabase
+      .from('product_images')
+      .select('storage_path')
+      .eq('id', id)
+      .single()
+
+    if (!image) return sendError(res, 'Image not found', 404)
+
+    if (image.storage_path) {
+      await supabase.storage.from('product-images').remove([image.storage_path])
+    }
+
+    const { error } = await supabase
+      .from('product_images')
+      .delete()
+      .eq('id', id)
+
+    if (error) return sendError(res, error.message, 400)
+
+    return sendSuccess(res, 'Image deleted')
+  } catch (err) {
+    return sendError(res, 'Failed to delete image', 500)
   }
 }
 
@@ -516,9 +720,7 @@ export const adminGetCustomers = async (req, res) => {
 
     let query = supabase
       .from('profiles')
-      .select(`
-        id, name, phone, role, created_at
-      `, { count: 'exact' })
+      .select(`id, name, phone, role, created_at`, { count: 'exact' })
       .eq('role', 'user')
 
     if (search) query = query.ilike('name', `%${search}%`)
@@ -548,6 +750,22 @@ export const adminGetCustomers = async (req, res) => {
 // ═══════════════════════════════════════════════════════════
 // CATEGORY MANAGEMENT
 // ═══════════════════════════════════════════════════════════
+
+export const adminGetCategories = async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('categories')
+      .select('*')
+      .order('display_order', { ascending: true })
+
+    if (error) return sendError(res, error.message, 400)
+
+    return sendSuccess(res, 'Categories fetched', { categories: data })
+  } catch (err) {
+    return sendError(res, 'Failed to fetch categories', 500)
+  }
+}
+
 
 export const adminCreateCategory = async (req, res) => {
   try {

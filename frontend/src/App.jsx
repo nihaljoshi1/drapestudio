@@ -27,6 +27,7 @@ import Customers from './pages/admin/Customers'
 import Inventory from './pages/admin/Inventory'
 import Coupons from './pages/admin/Coupons'
 import Categories from './pages/admin/Categories'
+import ManageVariants from './pages/admin/ManageVariants'
 
 // Guards
 const ProtectedRoute = ({ children }) => {
@@ -42,10 +43,11 @@ const AdminRoute = ({ children }) => {
 }
 
 export default function App() {
-  const { token, fetchMe } = useAuthStore()
+  const { fetchMe } = useAuthStore()
 
   useEffect(() => {
-    if (token) fetchMe()
+    const token = localStorage.getItem('token')
+    if (token && token !== 'undefined') fetchMe()
   }, [])
 
   return (
@@ -55,7 +57,7 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/products" element={<ProductListing />} />
         <Route path="/products/:slug" element={<ProductDetail />} />
-        <Route path="/checkout" element={<Checkout />} />
+        <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
         <Route path="/account" element={<ProtectedRoute><Account /></ProtectedRoute>} />
         <Route path="/orders/:id" element={<ProtectedRoute><OrderDetail /></ProtectedRoute>} />
       </Route>
@@ -69,6 +71,7 @@ export default function App() {
       <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
         <Route index element={<Dashboard />} />
         <Route path="products" element={<Products />} />
+        <Route path="products/:id/manage" element={<ManageVariants />} />
         <Route path="orders" element={<Orders />} />
         <Route path="customers" element={<Customers />} />
         <Route path="inventory" element={<Inventory />} />

@@ -14,4 +14,7 @@ export const productService = {
 
   // GET /categories
   getCategories: () => api.get('/products/categories'),
+
+  getBySlug: (slug) => api.get(`/products/${slug}`),
 }
+

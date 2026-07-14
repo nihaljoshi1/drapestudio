@@ -1,0 +1,11 @@
+.al__shell {
+  display: flex;
+  min-height: 100vh;
+  background: #F4F4F5;
+}
+
+.al__content {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+}
