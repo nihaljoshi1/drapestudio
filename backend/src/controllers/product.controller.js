@@ -1,5 +1,6 @@
 import { supabase } from '../config/supabase.js'
 import { sendSuccess, sendError } from '../utils/apiResponse.js'
+import { getCategoryFallback } from '../services/productService.js'
 
 // ─── Get All Products (with filter, sort, pagination) ─────
 export const getProducts = async (req, res) => {
@@ -110,16 +111,11 @@ export const getProductBySlug = async (req, res) => {
     data.product_images?.sort((a, b) => a.display_order - b.display_order)
 
     // Get related products (same category, exclude current)
-    const { data: related } = await supabase
-      .from('products')
-      .select(`
-        id, name, slug, base_price, sale_price,
-        product_images(url, is_primary)
-      `)
-      .eq('category_id', data.category_id)
-      .eq('is_active', true)
-      .neq('id', data.id)
-      .limit(4)
+    const related = await getCategoryFallback({
+      categoryId: data.category_id,
+      excludeProductId: data.id,
+      basePrice: data.base_price,
+    })
 
     return sendSuccess(res, 'Product fetched', { product: data, related: related || [] })
   } catch (err) {

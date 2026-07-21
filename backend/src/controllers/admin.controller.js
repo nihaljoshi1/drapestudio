@@ -1,5 +1,6 @@
 import { supabase } from '../config/supabase.js'
 import { sendSuccess, sendError } from '../utils/apiResponse.js'
+import { sendOrderStatusEmail } from '../services/emailService.js'
 
 // ═══════════════════════════════════════════════════════════
 // ANALYTICS
@@ -548,6 +549,8 @@ export const adminUpdateOrderStatus = async (req, res) => {
       note: note || null,
       changed_by: req.user.id,
     })
+
+    sendOrderStatusEmail(data, current.status, status, note).catch(err => console.error('Status email failed:', err))
 
     return sendSuccess(res, 'Order status updated', { order: data })
   } catch (err) {

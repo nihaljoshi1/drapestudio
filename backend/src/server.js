@@ -15,6 +15,7 @@ import paymentRoutes from './routes/payment.routes.js'
 import wishlistRoutes from './routes/wishlist.routes.js'
 import adminRoutes from './routes/admin.routes.js'
 import reviewRoutes from './routes/review.routes.js'
+import recommendationRoutes from './routes/recommendation.routes.js'
 
 const app = express()
 
@@ -27,6 +28,7 @@ app.use(cors({
 app.use(morgan('dev'))
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
+app.use('/api/v1/products', recommendationRoutes)
 
 // ─── Health Check ─────────────────────────────────────────
 app.get('/health', (req, res) => {

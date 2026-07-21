@@ -524,3 +524,27 @@
   .od__tracker-line { top: 18px; }
   .od__tracker-label { font-size: 0.62rem; }
 }
+
+.od__review-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-family: var(--font-body);
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--color-gold);
+  transition: color 0.2s ease;
+}
+.od__review-link:hover { color: var(--color-espresso); }
+.od__review-link svg { font-size: 0.7rem; }
+
+.od__review-done {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-family: var(--font-body);
+  font-size: 0.76rem;
+  color: #2E7D32;
+}

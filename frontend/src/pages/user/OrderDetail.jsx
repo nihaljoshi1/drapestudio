@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { reviewService } from '../../services/reviewService'
+import { faStar } from '@fortawesome/free-solid-svg-icons'
 import {
   faArrowLeft, faCircleCheck, faClock, faTruck,
   faXmark, faRotateLeft, faLocationDot, faCreditCard,
@@ -35,6 +37,7 @@ export default function OrderDetail() {
   const [order, setOrder] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [reviewEligibility, setReviewEligibility] = useState({})
 
   useEffect(() => {
     orderService.getOrderById(id)
@@ -42,6 +45,29 @@ export default function OrderDetail() {
       .catch(() => setError('Order not found or you don\'t have access to it.'))
       .finally(() => setLoading(false))
   }, [id])
+
+  useEffect(() => {
+    if (!order || order.status !== 'delivered') return
+    const itemsWithProductId = (order.order_items || []).filter(item => item.snapshot?.product_id)
+    if (itemsWithProductId.length === 0) return
+
+    let cancelled = false
+    async function checkEligibility() {
+      const results = await Promise.all(
+        itemsWithProductId.map(item =>
+          reviewService.getEligibility(item.snapshot.product_id)
+            .then(res => [item.snapshot.product_id, res.data])
+            .catch(() => [item.snapshot.product_id, null])
+        )
+      )
+      if (!cancelled) {
+        setReviewEligibility(Object.fromEntries(results.filter(([, v]) => v !== null)))
+      }
+    }
+    checkEligibility()
+    return () => { cancelled = true }
+  }, [order])
+
 
   if (loading) return (
     <div className="od__page">
@@ -150,6 +176,20 @@ export default function OrderDetail() {
                       {item.snapshot?.sku && <span className="od__item-sku"> · {item.snapshot.sku}</span>}
                     </p>
                     <p className="od__item-qty">Qty: {item.quantity}</p>
+                    {order.status === 'delivered' && item.snapshot?.product_id && (
+                      reviewEligibility[item.snapshot.product_id]?.eligible ? (
+                        <Link
+                          to={`/products/${item.snapshot.product_slug}#reviews`}
+                          className="od__review-link"
+                        >
+                          <FontAwesomeIcon icon={faStar} /> Write a Review
+                        </Link>
+                      ) : reviewEligibility[item.snapshot.product_id]?.alreadyReviewed ? (
+                        <span className="od__review-done">
+                          <FontAwesomeIcon icon={faCircleCheck} /> Reviewed
+                        </span>
+                      ) : null
+                    )}
                   </div>
                   <p className="od__item-price">
                     {formatPrice(item.unit_price * item.quantity)}

@@ -29,6 +29,7 @@ import './ProductDetail.css'
 import { colourToHex } from '../../utils/helpers.js'
 import { faStar } from '@fortawesome/free-solid-svg-icons'
 import { reviewService } from '../../services/reviewService'
+import { recommendationService } from '../../services/recommendationService'
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 function ProductDetailSkeleton() {
@@ -136,7 +137,7 @@ export default function ProductDetail() {
         if (!cancelled) setLoading(false)
       }
     }
-    
+
 
     load()
     return () => { cancelled = true }
@@ -193,6 +194,12 @@ export default function ProductDetail() {
     loadEligibility()
     return () => { cancelled = true }
   }, [product?.id, isAuthenticated])
+
+  useEffect(() => {
+    if (!loading && window.location.hash === '#reviews') {
+      document.getElementById('reviews')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }, [loading])
 
   // ── Derived data ──
   const variants = product?.product_variants || []
@@ -328,6 +335,11 @@ export default function ProductDetail() {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [lightboxOpen, images.length])
+
+  useEffect(() => {
+    if (!product?.id) return
+    recommendationService.logView(product.id).catch(() => { }) // fire-and-forget, matches your email pattern
+  }, [product?.id])
 
   // ── Scroll lock for lightbox ──
   useEffect(() => {
@@ -668,7 +680,7 @@ export default function ProductDetail() {
           </div>
         </div>
 
-        <section className="pd__reviews">
+        <section className="pd__reviews" id="reviews">
           <div className="pd__reviews-top">
             <h2 className="pd__reviews-title">Reviews</h2>
 

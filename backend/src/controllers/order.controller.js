@@ -1,5 +1,6 @@
 import { supabase } from '../config/supabase.js'
 import { sendSuccess, sendError } from '../utils/apiResponse.js'
+import { sendOrderConfirmationEmail } from '../services/emailService.js'
 
 // ─── Create Order ─────────────────────────────────────────
 export const createOrder = async (req, res) => {
@@ -45,7 +46,6 @@ export const createOrder = async (req, res) => {
       })
       .select()
       .single()
-
     if (orderError) return sendError(res, orderError.message, 400)
 
     // Create order items with product snapshot
@@ -70,6 +70,7 @@ export const createOrder = async (req, res) => {
         quantity: item.quantity,
         unit_price: item.unit_price,
         snapshot: {
+          product_id: variant.products.id,
           product_name: variant.products.name,
           product_slug: variant.products.slug,
           size: variant.size,
@@ -84,7 +85,10 @@ export const createOrder = async (req, res) => {
       .from('order_items')
       .insert(orderItems)
 
-    if (itemsError) return sendError(res, itemsError.message, 400)
+    if (itemsError) {
+      console.error('order_items insert error:', JSON.stringify(itemsError, null, 2))
+      return sendError(res, itemsError.message, 400)
+    }
 
     // Save delivery address
     const { error: addressError } = await supabase
@@ -132,6 +136,14 @@ export const createOrder = async (req, res) => {
     }
 
     return sendSuccess(res, 'Order placed successfully', { order }, 201)
+    supabase
+      .from('orders')
+      .select('*, order_items(quantity, unit_price, snapshot), order_addresses(*)')
+      .eq('id', order.id)
+      .single()
+      .then(({ data: fullOrder }) => {
+        if (fullOrder) sendOrderConfirmationEmail(fullOrder).catch(err => console.error('Order email failed:', err))
+      })
   } catch (err) {
     return sendError(res, 'Failed to create order', 500)
   }
